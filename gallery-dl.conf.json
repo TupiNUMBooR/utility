@@ -1,0 +1,11 @@
+{
+  "extractor": {
+    "ugoira": true,
+    "postprocessors": [
+      "ugoira"
+    ]
+  },
+  "cache": {
+    "file": "/home/data/gallery-dl/cache.sqlite3"
+  }
+}

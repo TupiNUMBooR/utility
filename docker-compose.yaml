@@ -1,0 +1,14 @@
+services:
+  utility:
+    image: tupinumboor/utility
+    container_name: utility
+    tty: true
+    stdin_open: true
+    network_mode: host
+    volumes:
+      - ./data:/home/data
+    build:
+      context: .
+      tags:
+        - "tupinumboor/utility:${VERSION}"
+        - "tupinumboor/utility:latest"
