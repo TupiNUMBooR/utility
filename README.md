@@ -2,10 +2,11 @@ Utility archlinux container
 
 Includes:
 
+- zsh
 - ffmpeg
 - imagemagick
 - git
-- openjdk
+- ~~openjdk~~
 - python
 - gallery-dl
 - yt-dlp
