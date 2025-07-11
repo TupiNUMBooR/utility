@@ -1,5 +1,8 @@
 Utility archlinux container
 
+- ![GitHub](https://github.githubassets.com/favicons/favicon-dark.svg) [TupiNUMBooR/utility](https://github.com/TupiNUMBooR/utility)
+- ![Docker Hub](https://hub.docker.com/favicon.ico) [tupinumboor/utility](https://hub.docker.com/repository/docker/tupinumboor/utility/general)
+
 Includes:
 
 - zsh
@@ -15,8 +18,8 @@ Includes:
 
 ```sh
 ./increment-version.sh
-docker build .
-./run.sh
+./build.sh
+./setup-utility.ps1
 ```
 
 # Inside
@@ -30,5 +33,3 @@ yt-dlp -S res:1080 [link]
 [gallery-dl/docs/gallery-dl-example.conf at master · mikf/gallery-dl](https://github.com/mikf/gallery-dl/blob/master/docs/gallery-dl-example.conf)
 
 # TODO:
-
-- [ ] add zsh
