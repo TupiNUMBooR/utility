@@ -1,3 +1,15 @@
+Utility archlinux container
+
+Includes:
+
+- ffmpeg
+- imagemagick
+- git
+- openjdk
+- python
+- gallery-dl
+- yt-dlp
+
 # Outside
 
 ```sh
