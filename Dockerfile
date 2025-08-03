@@ -33,7 +33,7 @@ RUN pacman -S --noconfirm \
 
 # 🔮 Установка gallery-dl
 RUN pip install --no-cache-dir --break-system-packages gallery-dl
-COPY gallery-dl.conf.json /home/.config/gallery-dl/config.json
+COPY gallery-dl.conf.json /etc/gallery-dl.conf
 
 # 🌀 Zsh
 RUN pacman -S --noconfirm \
@@ -44,4 +44,5 @@ SHELL ["/bin/zsh", "-c"]
 CMD ["zsh"]
 
 # 📂 Рабочая директория
+COPY .editorconfig /home/.editorconfig
 WORKDIR /home/data
