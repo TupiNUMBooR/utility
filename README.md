@@ -19,6 +19,11 @@ Includes:
 ```sh
 ./increment-version.sh
 ./build.sh
+./push.sh
+```
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser -ExecutionPolicy RemoteSigned
 ./setup-utility.ps1
 ```
 
