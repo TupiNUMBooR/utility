@@ -1,0 +1,250 @@
+#!/usr/bin/env bash
+
+# ======== Read args ========
+
+fmt=$1
+dir=.
+crf=
+q=
+q2=
+im_q=
+postfix=
+parallel=4
+shift
+
+while getopts "d:q:n:p:" o; do
+  case $o in
+  d)
+    dir=$OPTARG
+    [ "$fmt" == "test" ] || mkdir -p $dir
+    ;;
+  q)
+    crf="-crf $OPTARG"
+    q="$OPTARG"
+    im_q="-quality $OPTARG"
+    ;;
+  n) postfix="$OPTARG";;
+  p) parallel="$OPTARG";;
+  esac
+done
+shift $(($OPTIND - 1))
+files=("$@")
+
+# ======== Check for errors ========
+
+help() {
+  printf "cv - convert files to another format
+  usage: \e[1;36mcv [format] [options] [file]...\e[0m
+  formats:  test cp
+            jpg png webp[-l]
+            mp3 ogg opus flac
+            mp4 mkv[-gif,-480,-720] webm[-gif] vcrop vstrip vn
+            zip 7z[p]
+  options:
+    -d dir - directory to write the new files. Default '.'
+    -n name - name suffix for new file
+    -q quality - set crf for video converting\n"
+  [ ! -z $1 ] && exit $1
+}
+
+err() {
+  echo -e "\e[91m$1\e[0m"
+  [ ! -z $2 ] && exit $2
+}
+
+[ -z "$fmt" ] || [ -z "$files" ] && help 1
+
+# ======== Work ========
+
+case $fmt in
+*)
+  for f in "${files[@]}"; do
+    if [ ! -e "$f" ]; then
+      err "file $f not exist"
+      continue
+    fi
+
+    bn=$(basename "$f")
+    dn=$(dirname "$f")
+    Bn="${bn%.*}"
+
+    ext="${f##*.}"
+    fn="$dir/$dn/$Bn$postfix"
+    
+    [ "$fmt" == "test" ] || mkdir -p "$dir/$dn"
+
+    case $fmt in
+
+    # ======== Tests ========
+
+    test)
+      echo -e "\e[1;36m$f\e[0m ==> \e[1;32m$fn\e[0m.$fmt"
+      ;;
+
+    cp)
+      cp "$f" "$fn.$ext"
+      ;;
+
+    # ======== Images ========
+
+    jpg)
+      magick $im_q "$f" "$fn.jpg" &&
+      [ "$ext" == "webp" ] && exiv2 -ea- "$f" | exiv2 -ia- "$fn.jpg" &
+      ;;
+    png)
+      magick "$f" -quality 100 "$fn.png" &&
+      [ "$ext" == "webp" ] && exiv2 -ea- "$f" | exiv2 -ia- "$fn.png" &
+      ;;
+    webp)
+      [ ! -z $q ] && q2="-q $q"
+      cwebp -metadata all $q2 -o "$fn.webp" -- "$f" &
+      ;;
+    webp-l)
+      cwebp -metadata all -q 100 -lossless -o "$fn.webp" -- "$f" &
+      ;;
+    avif)
+      echo -e "\e[1;36m$f\e[0m ==> \e[1;32m$fn.avif\e[0m"
+      magick $im_q "$f" "$fn.avif" &
+      ;;
+    trim-png)
+      magick "$f" -trim -quality 100 "$fn.png" &
+      ;;
+
+    # ======== Archives ========
+
+    zip)
+      zip -r "$dir/$f.zip" "$f" &
+      ;;
+    7z)
+      7z a -mx9 "$dir/$f.7z" "$f" &
+      ;;
+    7zp)
+      7z a -mx9 -mhe -p "$dir/$f.7z" "$f" &
+      ;;
+    
+    tar-gz)
+      tar -cvzf "$dir/$f.tar.gz" "$f" &
+      ;;
+    tar-bz)
+      tar -cvjf "$dir/$f.tar.bz2" "$f" &
+      ;;
+    tar-xz)
+      tar -cvJf "$dir/$f.tar.xz" "$f" &
+      ;;
+    
+    # ======== Video ========
+
+    av1) # 35 - good, 45 - norm
+      ffmpeg -i "$f" -map 0 -c copy -c:v libsvtav1 $crf -c:a libopus -preset 5 -movflags faststart -pix_fmt yuv420p "$fn.av1.webm"
+      ;;
+    av1-10)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libsvtav1 $crf -c:a libopus -preset 5 -movflags faststart -pix_fmt yuv420p10le "$fn.av1.webm"
+      ;;
+    kf01)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libsvtav1 $crf -c:a libopus -preset 5 -movflags faststart -pix_fmt yuv420p10le "$fn.kf01.webm"
+      ;;
+    kf01m1)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libsvtav1 $crf -preset 5 -movflags faststart -pix_fmt yuv420p10le "$fn.kf01m1.webm"
+      ;;
+    av1-10-mkv)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libsvtav1 $crf -c:a libopus -preset 5 -movflags faststart -pix_fmt yuv420p10le "$fn.av1.mkv"
+      ;;
+    mp4)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx264 -preset slow $crf -c:a libopus -pix_fmt yuv420p -movflags faststart "$fn.mp4"
+      ;;
+    mkv)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 $crf -c:a libopus -movflags faststart -pix_fmt yuv420p "$fn.x265.mkv"
+      #libopus libvorbis libfdk_aac
+      #libx265 libx264 libvpx-vp9
+      ;;
+    mkv2)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 -preset slow $crf -c:a libopus -pix_fmt yuv420p -movflags faststart "$fn.mkv"
+      ;;
+    mkat)
+      ffmpeg -i "$f" -map 0 -c copy -c:a libopus -filter:a channelmap=channel_layout=5.1 "$fn.mka" &
+      ;;
+    mkvt)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 $crf -c:a libopus -b:a 48k "$fn.mkv"
+      ;;
+    mkv-480)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 $crf -c:a libopus -vf "scale=-2:480" "$fn.mkv"
+      ;;
+    mkv-720)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 $crf -c:a libopus -vf "scale=-2:720" "$fn.mkv"
+      ;;
+    mkv-flac)
+      ffmpeg -i "$f" -map 0 -c copy -c:v libx265 $crf -c:a flac "$fn.mkv"
+      ;;
+    mkv-gif)
+      ffmpeg -i "$f" -movflags faststart -pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2" -c:v libx265 $crf "$fn.mkv"
+      #-map 0 -c copy
+      #-crf 23 -preset placebo
+      #-pix_fmt yuv420p -vf "scale=trunc(iw/2)*2:trunc(ih/2)*2"
+      ;;
+    webm)
+      #crf 32 40
+      if [ -z "$crf" ]; then crf="-crf 32"; fi
+      ffmpeg -i "$f" -map 0 -c:v libvpx-vp9 -b:v 0 $crf -pass 1 -an -sn -f webm -y /dev/null &&
+        ffmpeg -i "$f" -movflags +faststart -map 0 -c copy -c:v libvpx-vp9 -b:v 0 $crf -pass 2 -c:a libopus -c:s vtt "$fn.webm"
+      rm ffmpeg2pass*.log
+      ;;
+    webm-gif)
+      if [ -z "$crf" ]; then crf="-crf 32"; fi
+      ffmpeg -i "$f" -map 0 -c:v libvpx-vp9 -b:v 0 $crf -pass 1 -an -sn -f webm -y /dev/null &&
+        ffmpeg -i "$f" -movflags +faststart -pix_fmt yuv420p -map 0 -c copy -c:v libvpx-vp9 -b:v 0 $crf -pass 2 -c:a libopus -c:s vtt "$fn.webm"
+      rm ffmpeg2pass*.log
+      ;;
+    vcrop)
+      #TODO get best time
+      crop=$(ffmpeg -ss 10 -i "$f" -vframes 2 -vf cropdetect -f null - 2>&1 | grep -Pom1 crop=[0-9:]*)
+      #TODO compare with other frames
+      ffprobe -v error -show_entries stream=width,height -of csv=p=0:s=x "$f" | sed '/^$/d'
+      echo $crop
+      #read -p "ok?" -n 1 -r
+      #ffplay -vf $c $f
+      ffmpeg -i "$f" -vf "$crop" -c copy -c:v libx265 -c:a libopus $crf "$fn.crop.mkv"
+      ;;
+    vcrop2)
+      #TODO get best time
+      crop=$(ffmpeg -ss 10 -i "$f" -vframes 2 -vf cropdetect -f null - 2>&1 | grep -Pom1 crop=[0-9:]*)
+      #TODO compare with other frames
+      ffprobe -v error -show_entries stream=width,height -of csv=p=0:s=x "$f" | sed '/^$/d'
+      echo $crop
+      #read -p "ok?" -n 1 -r
+      #ffplay -vf $c $f
+      ffmpeg -i "$f" -vf "$crop" -map 0 -c copy -c:v libsvtav1 $crf -c:a libopus -preset 5 -movflags faststart -pix_fmt yuv420p "$fn.crop.webm"
+      ;;
+    vstrip)
+      metas=$(echo -metadata:s' '{encoder,ENCODER,{BPS,DURATION,NUMBER_OF_{FRAMES,BYTES},_STATISTICS_{WRITING_{APP,DATE_UTC},TAGS}}{'',-eng}}='')
+      ffmpeg -i "$f" -map 0 -c copy $metas "$fn.strip.$fileextension"
+      ;;
+    vn)
+      ffmpeg -i "$f" -map 0 -c copy -vn "$fn.$fileextension"
+      ;;
+
+    # ======== SOUND ========
+    #if convert from ogg/opus to anything, need --map_metadata 0:s:0
+
+    flac) ffmpeg -i "$f" "$fn.flac" & ;;
+    mp3) ffmpeg -i "$f" "$fn.mp3" & ;;
+    ogg) ffmpeg -i "$f" "$fn.ogg" & ;;
+    opus)
+      #ffmpeg can't add album images to opusvorbis
+      o=
+      [[ "$f" == *.ogg ]] || [[ "$f" == *.opus ]] && o="-map_metadata 0:s:0"
+      ffmpeg -i "$f" -f flac -c:v copy $o - | opusenc - "$fn.opus" &
+      ;;
+
+    # ======== End ========
+
+    *)
+      help
+      exit 2
+      ;;
+    esac
+  ((i++))
+  ((i % $parallel == 0)) && echo wait && wait
+  done
+  ;;
+esac
+echo wait && wait
