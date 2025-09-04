@@ -26,11 +26,6 @@ RUN pacman -S --noconfirm \
     exiv2 imagemagick ffmpeg yt-dlp \
  && pacman -Scc --noconfirm
 
-# ☕ Java
-# RUN pacman -S --noconfirm \
-#     maven jdk-openjdk \
-#  && pacman -Scc --noconfirm
-
 # NodeJS
 RUN pacman -S --noconfirm \
     nodejs npm \
@@ -39,14 +34,6 @@ RUN pacman -S --noconfirm \
 # 🔮 Установка gallery-dl
 RUN pip install --no-cache-dir --break-system-packages gallery-dl
 COPY gallery-dl.conf.json /etc/gallery-dl.conf
-
-# 🌀 Zsh
-RUN pacman -S --noconfirm \
-    zsh zsh-completions zsh-syntax-highlighting zsh-history-substring-search zsh-autosuggestions \
- && pacman -Scc --noconfirm
-COPY zshrc /root/.zshrc
-SHELL ["/bin/zsh", "-c"]
-CMD ["zsh"]
 
 # 📂 Рабочая директория
 COPY .editorconfig /home/.editorconfig
