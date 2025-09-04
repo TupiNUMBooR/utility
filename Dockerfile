@@ -31,6 +31,11 @@ RUN pacman -S --noconfirm \
 #     maven jdk-openjdk \
 #  && pacman -Scc --noconfirm
 
+# NodeJS
+RUN pacman -S --noconfirm \
+    nodejs npm \
+ && pacman -Scc --noconfirm
+
 # 🔮 Установка gallery-dl
 RUN pip install --no-cache-dir --break-system-packages gallery-dl
 COPY gallery-dl.conf.json /etc/gallery-dl.conf
