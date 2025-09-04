@@ -33,8 +33,7 @@ RUN pacman -S --noconfirm \
 
 # 🔮 Установка gallery-dl
 RUN pip install --no-cache-dir --break-system-packages gallery-dl
-COPY gallery-dl.conf.json /etc/gallery-dl.conf
 
 # 📂 Рабочая директория
-COPY .editorconfig /home/.editorconfig
+COPY content /
 WORKDIR /home/data
