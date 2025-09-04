@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# cv-avif.sh
+shopt -s globstar nocaseglob
+path=${1:-.}
+max_procs=${2:-8}
+
+echo "cv-avif $path $max_procs"
+echo -e "Looking for files in \033[92m$path\033[0m"
+files=$(find . -type f -regextype posix-extended -iregex '.*\.(jpe?g|png|webp|bmp)' | wc -l)
+echo -e "Files count: \033[92m$files\033[0m"
+echo -e "Max parallel processes is \033[92m$max_procs\033[0m"
+
+[ "$path" == "." ] && read -p "Enter to continue, Ctrl-C to abort..."
+((i=0)) || :
+
+cv() {
+  [ ! -f "$f" ] && return
+  ((++i >= "$max_procs")) && wait -n || sleep 0.01
+  echo "$i $1"
+  magick "$1" "${1%.*}.avif" && rm "$1" && echo "$i ok" &
+}
+
+for f in "$path"/**/*.{jp{,e}g,png,webp,bmp}; do
+  cv "$f"
+done
+echo wait && wait
+echo finish
