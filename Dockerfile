@@ -1,19 +1,7 @@
 FROM archlinux:base-devel
 
-# 📦 Обновление системы
+# 📦 Update
 RUN pacman -Syu --noconfirm \
- && pacman -Scc --noconfirm
-
-# 🌐 Утилиты
-RUN pacman -S --noconfirm \
-    bash-completion man-pages mandoc \
-    zip p7zip ncdu jq \
-    tmux htop btop \
- && pacman -Scc --noconfirm
-
-# 💻 Редакторы и анализ кода
-RUN pacman -S --noconfirm \
-    vim git cloc \
  && pacman -Scc --noconfirm
 
 # 🐍 Python
@@ -21,19 +9,33 @@ RUN pacman -S --noconfirm \
     python python-pip \
  && pacman -Scc --noconfirm
 
-# 🖼️ Мультимедиа и парсеры
-RUN pacman -S --noconfirm \
-    exiv2 imagemagick ffmpeg yt-dlp \
- && pacman -Scc --noconfirm
-
 # NodeJS
 RUN pacman -S --noconfirm \
     nodejs npm \
  && pacman -Scc --noconfirm
 
-# 🔮 Установка gallery-dl
+# ☕ Java
+# RUN pacman -S --noconfirm \
+#     jdk-openjdk maven \
+#  && pacman -Scc --noconfirm
+
+# 🖼️ Multimedia
+RUN pacman -S --noconfirm \
+    exiv2 imagemagick libheif \
+    ffmpeg opus-tools yt-dlp \
+ && pacman -Scc --noconfirm
+
+# 🌐 Utilities
+RUN pacman -S --noconfirm \
+    bash-completion man-pages mandoc \
+    zip unzip p7zip cmus vim git \
+    netcat tmux ncdu htop btop cloc \
+    jq yq xmlstarlet \
+ && pacman -Scc --noconfirm
+
+# 🔮 gallery-dl
 RUN pip install --no-cache-dir --break-system-packages gallery-dl
 
-# 📂 Рабочая директория
+# 📂 Workdir
 COPY content /
 WORKDIR /home/data
