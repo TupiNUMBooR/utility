@@ -1,0 +1,42 @@
+#!/usr/bin/env bash
+set -e
+
+metas=$(echo -metadata:s' '{encoder,ENCODER,{BPS,DURATION,NUMBER_OF_{FRAMES,BYTES},_STATISTICS_{WRITING_{APP,DATE_UTC},TAGS}}{'',-eng}}='')
+vf=
+crf=
+o=
+a5=false
+no=false
+while getopts "h:s:q:o:5n" o; do
+  case $o in
+  h) echo "Usage: cv-coll [-h5n] [-s 1080] [-q 28] [-o '-c:v copy'] FILES..."; exit;;
+  n) no=true;;
+  s) vf="-vf scale=-2:$OPTARG";;
+  q) crf="-crf $OPTARG";;
+  o) opts=$OPTARG;;
+  5) a5=true;; #"-af channelmap=channel_layout=5.1";;
+  *) ;;
+  esac
+done
+shift $((OPTIND - 1))
+
+for f in "$@"; do
+  fn="recoded/${f%.*}.mkv"
+
+  a5s=
+  if $a5; then
+    ffprobe "$f" 2>&1 | grep Stream | grep "5.1(side)" | perl -pe 's/.*#0:(\d+).*/$1/'
+    streams=$(ffprobe "$f" 2>&1 | grep Stream | grep "5.1(side)" | perl -pe 's/.*#0:(\d+).*/$1/')
+    for s in $streams; do a5s="$a5s -filter:$s channelmap=channel_layout=5.1"; done
+  fi
+
+  echo \
+    ffmpeg -i "$f" -map 0 -c copy -c:a libopus -c:v libx265 -preset slow -movflags faststart -pix_fmt yuv420p        $crf $vf $a5s $opts "$fn"
+  if ! $no; then
+    mkdir -p "$(dirname "$fn")"
+    ffmpeg -i "$f" -map 0 -c copy -c:a libopus -c:v libx265 -preset slow -movflags faststart -pix_fmt yuv420p $metas $crf $vf $a5s $opts "$fn"
+  fi
+done
+
+# remove streams
+# 5.1 partially

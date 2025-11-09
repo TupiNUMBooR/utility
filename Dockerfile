@@ -30,7 +30,7 @@ RUN pacman -Syu --noconfirm \
     bash-completion man-pages mandoc \
     zip unzip p7zip cmus vim git \
     netcat tmux ncdu htop btop cloc \
-    jq yq xmlstarlet \
+    jq yq xmlstarlet perl-rename \
  && pacman -Scc --noconfirm
 
 # 🖼️ gallery-dl

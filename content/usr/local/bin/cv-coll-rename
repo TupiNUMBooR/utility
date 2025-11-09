@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -e
+
+if [ -z "$1" ]; then
+  echo "Usage: cv-coll-rename -[p.en -c ARG FILE1 FILE2..."
+  exit 1
+fi
+
+a1=false
+a2=false
+a3=false
+a4=false
+a5=false
+custom=
+n=
+
+while getopts "[p.n(ec:" o; do
+  case $o in
+  [) a1=true;;
+  \() a2=true;;
+  p) a3=true;;
+  .) a4=true;;
+  e) a5=true;;
+  c) custom="$OPTARG";;
+  n) n="-n"
+  esac
+done
+shift $(($OPTIND - 1))
+
+if $a1; then perl-rename $n 's/\s*\[.*?\]\s*//g' "$@"; fi
+if $a2; then perl-rename $n 's/\s*\(.*?\)\s*//g' "$@"; fi
+if $a3; then perl-rename $n 's/\s*(1080p|720p|480p|960x|web-?dl|bd-?rip|hdr(10)?|x264|hevc|selezen)\s*//ig' "$@"; fi
+if $a4; then perl-rename $n 's/\.(?![^.]+$)/ /g' "$@"; fi
+if $a5; then
+  perl-rename $n 's/\s+/ /g' "$@"
+  perl-rename $n 's/\s*\.\s*([^.]+)\s*$/.$1/g' "$@"
+fi
+if [ -n "$custom" ]; then perl-rename $n "s/\s*$custom\s*/ /g" "$@"; fi
